@@ -1,5 +1,5 @@
-First release of Skip Training for Horses of Hoofprint Bay.
+Skip Training 1.1.0 for Horses of Hoofprint Bay.
 
-Adds Skip choices to the pause menu of training rides, trail rides, riding lessons and competitions. A skipped ride ends the way it would at the finish line, so the game hands out the usual results. A horse can skip a competition after it won its previous one, and the skip replays its best run there. The stable's Horse Info book also shows each horse's best placing, wins, best time and prize money per competition.
+New in this version: you can set what a horse needs to give each riding lesson. In the Mods menu, under Lesson horse needs, each lesson level (Beginner, Novice, Intermediate and Advanced) has a dropdown for confidence and boxes where you type the strength and endurance. They start at the game's own values, so Beginner lessons need 80% confidence, Novice 70%, Intermediate 60% and Advanced 50%. A change applies right away, also in a running game, and is the same for every save.
 
-Requires BepInEx 6 bleeding edge build 793 (IL2CPP, Windows x64) and Mod Manager. To install, extract the zip into the game folder. The settings are in the Mods menu.
+Requires BepInEx 6 bleeding edge build 793 (IL2CPP, Windows x64) and Mod Manager 1.2.0 or newer. To update, extract the zip into the game folder and replace the old `SkipTraining.dll`, and update Mod Manager as well.

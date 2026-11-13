@@ -37,6 +37,11 @@ internal static class ModManagerLink
         page.Hint("A horse can skip a competition after winning its previous one. The skip reuses the horse's best run in that competition.",
             () => S.Competitions);
 
+        page.Heading("Lesson horse needs");
+        page.Hint("What a horse needs to give each lesson. \"Game\" and the numbers already filled in are the game's own values.");
+        for (var level = 0; level < LessonRequirements.Levels.Length; level++)
+            LessonNeeds(page, level);
+
         page.Heading("Horse Info");
         page.Toggle("Results per competition", () => S.HorseInfoResults, on => Change(() => S.HorseInfoResults = on));
         page.Hint("Shows each horse's best placing, wins, best time and prize money per competition in the stable's Horse Info book.");
@@ -46,6 +51,33 @@ internal static class ModManagerLink
         page.Slider(steps => $"{horses}: from {steps * Step}% confidence", 0, 100 / Step,
             () => (int)System.Math.Round(get() / (double)Step), steps => Change(() => set(steps * Step)),
             DefaultSteps, visible);
+
+    // Confidence: dropdown "Game (80%)", 0%, 5% ... 100%. Strength and endurance: number boxes.
+    private static void LessonNeeds(ISettingsPage page, int level)
+    {
+        var name = LessonRequirements.Levels[level];
+        var choices = new string[100 / Step + 2];
+        choices[0] = $"Game ({LessonRequirements.GameValue(level, LessonRequirements.Stat.Confidence)}%)";
+        for (var i = 1; i < choices.Length; i++)
+            choices[i] = $"{(i - 1) * Step}%";
+        page.Choice($"{name}: confidence", choices,
+            () => S.LessonMinConfidence[level] < 0 ? 0 : 1 + (int)System.Math.Round(S.LessonMinConfidence[level] / (double)Step),
+            i => ChangeLessons(() => S.LessonMinConfidence[level] = i == 0 ? -1 : (i - 1) * Step));
+        LessonNumber(page, $"{name}: strength", level, LessonRequirements.Stat.Strength, S.LessonMinStrength);
+        LessonNumber(page, $"{name}: endurance", level, LessonRequirements.Stat.Endurance, S.LessonMinEndurance);
+    }
+
+    // Shows the game's value until one is typed; typing the game's value goes back to "game".
+    private static void LessonNumber(ISettingsPage page, string label, int level, LessonRequirements.Stat stat, int[] values) =>
+        page.Number(label, 0, 100,
+            () => values[level] >= 0 ? values[level] : LessonRequirements.GameValue(level, stat),
+            v => ChangeLessons(() => values[level] = v == LessonRequirements.GameValue(level, stat) ? -1 : v));
+
+    private static void ChangeLessons(System.Action apply)
+    {
+        Change(apply);
+        LessonRequirements.ApplyNow();
+    }
 
     private static void Change(System.Action apply)
     {

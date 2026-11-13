@@ -17,13 +17,14 @@ The settings are in the Mods menu of [Mod Manager](https://github.com/LaylasLeth
 - Skip training and Skip trail rides: off, owned horses, boarders or all horses. A slider for owned horses and one for boarders set the confidence a horse needs before you can skip.
 - Skip lessons: on or off, whether a skipped lesson earns the tip, and the confidence the lesson horse needs.
 - Skip competitions: on or off.
+- Lesson horse needs: the confidence, strength and endurance a horse needs to give each lesson level (Beginner, Novice, Intermediate, Advanced). Pick Game in the dropdown, or type the game's number in a box, to keep the game's value.
 - Results per competition: shows or hides the results in Horse Info.
 
 The texts of the four skip choices can be changed in `BepInEx\config\hoofprintbay.skiptraining.cfg`.
 
 ## Install
 
-You need BepInEx 6 bleeding edge build 793 for IL2CPP (Windows x64) and Mod Manager. BepInEx 5 and the older 6.0.0-pre builds can't load this game.
+You need BepInEx 6 bleeding edge build 793 for IL2CPP (Windows x64) and Mod Manager 1.2.0 or newer. BepInEx 5 and the older 6.0.0-pre builds can't load this game.
 
 1. Install BepInEx and Mod Manager as described on the [Mod Manager page](https://github.com/LaylasLethalParadox/HoofprintBay-ModManager#install).
 2. Extract the Skip Training zip into the game folder, so that you have `BepInEx\plugins\SkipTraining\SkipTraining.dll`.

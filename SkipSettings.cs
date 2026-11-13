@@ -45,6 +45,13 @@ internal class SkipSettings
     public bool Competitions = true;
     public bool HorseInfoResults = true;
 
+    // What a horse needs to give each lesson (see LessonRequirements); -1 = the game's own value.
+    public readonly int[] LessonMinConfidence = { -1, -1, -1, -1 };
+    public readonly int[] LessonMinStrength = { -1, -1, -1, -1 };
+    public readonly int[] LessonMinEndurance = { -1, -1, -1, -1 };
+
+    private static string LessonKey(int lesson, string stat) => $"Lesson{LessonRequirements.Levels[lesson]}{stat}";
+
     private static SkipSettings current;
 
     public static SkipSettings Current => current ??= Load();
@@ -76,6 +83,14 @@ internal class SkipSettings
                     case nameof(LessonConfidence): settings.LessonConfidence = ParsePercent(value, settings.LessonConfidence); break;
                     case nameof(Competitions): settings.Competitions = ParseBool(value, settings.Competitions); break;
                     case nameof(HorseInfoResults): settings.HorseInfoResults = ParseBool(value, settings.HorseInfoResults); break;
+                    default:
+                        for (var i = 0; i < LessonRequirements.Levels.Length; i++)
+                        {
+                            if (key == LessonKey(i, "Confidence")) settings.LessonMinConfidence[i] = ParseOverride(value);
+                            else if (key == LessonKey(i, "Strength")) settings.LessonMinStrength[i] = ParseOverride(value);
+                            else if (key == LessonKey(i, "Endurance")) settings.LessonMinEndurance[i] = ParseOverride(value);
+                        }
+                        break;
                 }
             }
         }
@@ -91,7 +106,7 @@ internal class SkipSettings
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
-            File.WriteAllLines(FilePath, new[]
+            var lines = new System.Collections.Generic.List<string>
             {
                 "# Skip Training mod settings, the same for all save games. Change them in the Mods menu of the game.",
                 $"{nameof(Training)}={Training}",
@@ -105,7 +120,15 @@ internal class SkipSettings
                 $"{nameof(LessonConfidence)}={LessonConfidence}",
                 $"{nameof(Competitions)}={Competitions}",
                 $"{nameof(HorseInfoResults)}={HorseInfoResults}",
-            });
+                "# Lesson horse needs (-1 = the game's own value).",
+            };
+            for (var i = 0; i < LessonRequirements.Levels.Length; i++)
+            {
+                lines.Add($"{LessonKey(i, "Confidence")}={LessonMinConfidence[i]}");
+                lines.Add($"{LessonKey(i, "Strength")}={LessonMinStrength[i]}");
+                lines.Add($"{LessonKey(i, "Endurance")}={LessonMinEndurance[i]}");
+            }
+            File.WriteAllLines(FilePath, lines);
         }
         catch (Exception e)
         {
@@ -118,6 +141,9 @@ internal class SkipSettings
 
     private static int ParsePercent(string value, int fallback) =>
         int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var percent) ? Math.Clamp(percent, 0, 100) : fallback;
+
+    private static int ParseOverride(string value) =>
+        int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) && v >= 0 ? Math.Min(v, 100) : -1;
 
     private static bool ParseBool(string value, bool fallback) =>
         bool.TryParse(value, out var flag) ? flag : fallback;
