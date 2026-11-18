@@ -6,7 +6,7 @@
     <RootNamespace>SkipTraining</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <!-- Game install that holds BepInEx; references and the plugin output point here. -->
@@ -30,7 +30,8 @@
     <Reference Include="Unity.TextMeshPro" HintPath="$(BepInExDir)interop\Unity.TextMeshPro.dll" Private="false" />
   </ItemGroup>
 
-  <Target Name="CopyToPlugins" AfterTargets="Build">
+  <!-- Installs the plugin into the game. Build with -p:NoInstall=true to only compile. -->
+  <Target Name="CopyToPlugins" AfterTargets="Build" Condition="'$(NoInstall)' != 'true'">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExDir)plugins\SkipTraining\" />
   </Target>
 

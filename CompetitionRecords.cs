@@ -65,7 +65,7 @@ internal class CompetitionRun
     }
 }
 
-// A horse's results in one competition course, counted from when Skip Training is installed.
+// A horse's results in one competition course, counted from when the mod is installed.
 internal class CourseStats
 {
     public int BestPlace;       // 0 = never finished
@@ -239,7 +239,7 @@ internal class CompetitionRecords
         {
             var lines = new List<string>
             {
-                "# Skip Training mod: competition results per horse (time;penalties without and with time faults;equitation score;",
+                "# Skip Button mod: competition results per horse (time;penalties without and with time faults;equitation score;",
                 "# ties by time;falls;refusals;knocks;missed gates), whether each horse won its latest competition,",
                 "# and per course: best place (0 = none);rides;best time (-1 = none);prize money;wins."
             };

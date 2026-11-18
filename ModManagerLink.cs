@@ -7,6 +7,8 @@ internal static class ModManagerLink
 {
     private static readonly string[] ScopeChoices = { "Off", "Owned horses", "Boarders", "All horses" };
     private static readonly string[] OnOffChoices = { "Off", "On" };
+    private static readonly string[] TipChoices = { "No tip", "Good lesson tip", "Best tip" };
+    private static readonly string[] CompetitionRules = { "Won previous competition", "Won this one before" };
 
     // Confidence sliders move in 5% steps (slider values 0..20), like in the settings menu.
     private const int Step = 5;
@@ -20,7 +22,21 @@ internal static class ModManagerLink
     private static void Build(ISettingsPage page)
     {
         // The same for every save game, so they can be changed from the main menu too.
-        page.Heading("Skip rides and lessons");
+        page.Section("Skip rides, lessons, competitions", () => SkipRows(page));
+
+        page.Section("Lesson horse needs", () =>
+        {
+            for (var level = 0; level < LessonRequirements.Levels.Length; level++)
+                LessonNeeds(page, level);
+        }, "What a horse needs to give each lesson. \"Game\" and the numbers already filled in are the game's own values.");
+
+        page.Heading("Horse Info");
+        page.Toggle("Results per competition", () => S.HorseInfoResults, on => Change(() => S.HorseInfoResults = on));
+        page.Hint("Shows each horse's best placing, wins, best time and prize money per competition in the stable's Horse Info book.");
+    }
+
+    private static void SkipRows(ISettingsPage page)
+    {
         page.Choice("Skip training", ScopeChoices, () => (int)S.Training, i => Change(() => S.Training = (HorseScope)i));
         Confidence(page, "Owned horses", () => S.TrainingOwnedConfidence, p => S.TrainingOwnedConfidence = p, () => S.Training.IncludesOwned());
         Confidence(page, "Boarders", () => S.TrainingBoarderConfidence, p => S.TrainingBoarderConfidence = p, () => S.Training.IncludesBoarders());
@@ -30,21 +46,16 @@ internal static class ModManagerLink
         Confidence(page, "Boarders", () => S.TrailBoarderConfidence, p => S.TrailBoarderConfidence = p, () => S.TrailRides.IncludesBoarders());
 
         page.Choice("Skip lessons", OnOffChoices, () => S.Lessons ? 1 : 0, i => Change(() => S.Lessons = i == 1));
-        page.Toggle("Skipped lessons earn tips", () => S.LessonTips, on => Change(() => S.LessonTips = on), () => S.Lessons);
+        page.Choice("Tip for a skipped lesson", TipChoices, () => (int)S.LessonTip, i => Change(() => S.LessonTip = (LessonTip)i), () => S.Lessons);
         Confidence(page, "Lesson horse", () => S.LessonConfidence, p => S.LessonConfidence = p, () => S.Lessons);
 
         page.Choice("Skip competitions", OnOffChoices, () => S.Competitions ? 1 : 0, i => Change(() => S.Competitions = i == 1));
+        page.Choice("Competition skip needs", CompetitionRules, () => S.CompetitionAnyWin ? 1 : 0,
+            i => Change(() => S.CompetitionAnyWin = i == 1), () => S.Competitions);
         page.Hint("A horse can skip a competition after winning its previous one. The skip reuses the horse's best run in that competition.",
-            () => S.Competitions);
-
-        page.Heading("Lesson horse needs");
-        page.Hint("What a horse needs to give each lesson. \"Game\" and the numbers already filled in are the game's own values.");
-        for (var level = 0; level < LessonRequirements.Levels.Length; level++)
-            LessonNeeds(page, level);
-
-        page.Heading("Horse Info");
-        page.Toggle("Results per competition", () => S.HorseInfoResults, on => Change(() => S.HorseInfoResults = on));
-        page.Hint("Shows each horse's best placing, wins, best time and prize money per competition in the stable's Horse Info book.");
+            () => S.Competitions && !S.CompetitionAnyWin);
+        page.Hint("A horse can skip a competition it has won before, or any competition after winning its previous one. The skip reuses the horse's best run in that competition.",
+            () => S.Competitions && S.CompetitionAnyWin);
     }
 
     private static void Confidence(ISettingsPage page, string horses, System.Func<int> get, System.Action<int> set, System.Func<bool> visible) =>

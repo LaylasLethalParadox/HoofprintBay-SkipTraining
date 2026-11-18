@@ -4,7 +4,7 @@ using HarmonyLib;
 namespace SkipTraining;
 
 // Skipping riding lessons from the lesson's pause menu. A skipped lesson counts as a "good" lesson:
-// the client pays the lesson fee, and the good-lesson tip only when the save's settings allow it.
+// the client pays the lesson fee plus the tip chosen in the settings (none, good-lesson or excellent-lesson tip).
 [HarmonyPatch]
 internal static class LessonSkip
 {
@@ -22,9 +22,9 @@ internal static class LessonSkip
             {
                 if (!lesson.running)
                     return;
-                var tips = SkipSettings.Current.LessonTips;
-                FinishAsGoodLesson(lesson, tips);
-                Plugin.Logger.LogInfo(tips ? "Lesson skipped (with tip)." : "Lesson skipped (without tip).");
+                var tip = SkipSettings.Current.LessonTip;
+                var paid = FinishAsGoodLesson(lesson, tip);
+                Plugin.Logger.LogInfo($"Lesson skipped ({tip} tip: {paid}).");
             });
         }
         catch (Exception e)
@@ -57,7 +57,7 @@ internal static class LessonSkip
         return true;
     }
 
-    private static void FinishAsGoodLesson(RidingLesson lesson, bool tips)
+    private static int FinishAsGoodLesson(RidingLesson lesson, LessonTip tipChoice)
     {
         // EndRide scores the lesson as correct / (correct + wrong) time per rider error; make every one correct.
         var correct = lesson.timesCorrect;
@@ -75,18 +75,25 @@ internal static class LessonSkip
         lesson.numCorrectInputs = 3;
         lesson.numWrongInputs = 1;
 
-        // EndRide pays moneyBase + moneyTipGood for a good lesson; withhold the tip for the duration of the call.
+        // EndRide pays moneyBase + moneyTipGood for a good lesson; swap in the chosen tip for the duration of the call.
+        // Scoring the lesson "excellent" instead would change more than the money.
         var plan = lesson.chosenLesson;
-        var tip = plan.moneyTipGood;
-        if (!tips)
-            plan.moneyTipGood = 0;
+        var goodTip = plan.moneyTipGood;
+        var paid = tipChoice switch
+        {
+            LessonTip.None => 0,
+            LessonTip.Best => Math.Max(goodTip, plan.moneyTipExcellent),
+            _ => goodTip
+        };
+        plan.moneyTipGood = paid;
         try
         {
             lesson.EndRide(false);
         }
         finally
         {
-            plan.moneyTipGood = tip;
+            plan.moneyTipGood = goodTip;
         }
+        return paid;
     }
 }

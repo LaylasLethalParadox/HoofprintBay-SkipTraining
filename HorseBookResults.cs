@@ -74,7 +74,7 @@ internal static class HorseBookResults
             }
 
             var note = Line(ui, template, "Note", ref at, null);
-            note.text = "<size=80%>Placings, wins, times and prize money are counted from when Skip Training was installed. "
+            note.text = "<size=80%>Placings, wins, times and prize money are counted from when Skip Button was installed. "
                 + "Earlier wins and placings come from the horse's competition level (\"1+ wins\" = won at least once), earlier times from its best recorded runs.</size>";
             note.gameObject.SetActive(open);
         }
@@ -132,9 +132,7 @@ internal static class HorseBookResults
             var course = courses[i];
             if (course == null || course.discipline != discipline)
                 continue;
-            // A course's ridingLevel is the placing it awards: PLACED_1 = Beginner ... PLACED_4 = Advanced.
-            var offset = (int)course.ridingLevel - (int)RidingLevel.PLACED_1;
-            var level = offset >= 0 ? offset / 2 : -1;
+            var level = LevelOf(course);
             var stats = records.Stats(horse.uuid, course.name);
             var run = records.Best(horse.uuid, course.name);
             if (sb.Length > 0)
@@ -149,16 +147,34 @@ internal static class HorseBookResults
         return sb.ToString();
     }
 
+    // A course's ridingLevel is the placing it awards: PLACED_1 = Beginner ... PLACED_4 = Advanced.
+    private static int LevelOf(CourseManager.Course course)
+    {
+        var offset = (int)course.ridingLevel - (int)RidingLevel.PLACED_1;
+        return offset >= 0 ? offset / 2 : -1;
+    }
+
+    // Whether the horse ever won this course, counted or proven by its competition level.
+    public static bool HasWon(HorseData horse, CourseManager.Course course) =>
+        Won(CompetitionRecords.Current.Stats(horse.uuid, course.name), Experience(horse, course.discipline), LevelOf(course));
+
+    private static bool Won(CourseStats stats, RidingLevel experience, int level)
+    {
+        if (stats != null && (stats.Wins > 0 || stats.BestPlace == 1))
+            return true;
+        // RidingLevel goes PLACED_1, WON_1, PLACED_2, ... from 3 on, two values per course level.
+        // Entering the next level needs a win at this one, so any higher level means a win here.
+        // Unknown course level: only what was counted.
+        return level >= 0 && (int)experience > (int)RidingLevel.PLACED_1 + 2 * level;
+    }
+
     // Best of what was counted and what the horse's competition level proves.
     private static string Placing(CourseStats stats, RidingLevel experience, int level)
     {
-        // RidingLevel goes PLACED_1, WON_1, PLACED_2, ... from 3 on, two values per course level.
         var placedHere = (int)RidingLevel.PLACED_1 + 2 * level;
-        // Unknown course level: only what was counted.
         var exp = level >= 0 ? (int)experience : int.MinValue;
         var counted = stats != null ? stats.BestPlace : 0;
-        // Entering the next level needs a win at this one, so any higher level means "Won" here.
-        if (counted == 1 || exp == placedHere + 1 || exp > placedHere + 1)
+        if (Won(stats, experience, level))
             return "Won";
         if (counted > 1 && counted <= PodiumPlaces)
             return $"Placed ({Ordinal(counted)})";

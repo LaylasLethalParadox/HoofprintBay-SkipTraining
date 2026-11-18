@@ -47,7 +47,7 @@ jobs:
           fi
           gh release create "$GITHUB_REF_NAME" "dist/SkipTraining-$VERSION.zip" \
             --verify-tag --latest \
-            --title "Skip Training $VERSION" \
+            --title "Skip Button $VERSION" \
             --notes-file RELEASE_NOTES.md
           # Older releases stay downloadable; they are only marked as archived (once).
           gh release list --limit 100 --json tagName --jq '.[].tagName' | while read -r old; do

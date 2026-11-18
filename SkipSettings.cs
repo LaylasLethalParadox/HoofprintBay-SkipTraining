@@ -13,6 +13,14 @@ internal enum HorseScope
     AllHorses
 }
 
+// What a skipped lesson pays on top of the lesson fee.
+internal enum LessonTip
+{
+    None,
+    Good,
+    Best
+}
+
 internal static class HorseScopeExtensions
 {
     public static bool Includes(this HorseScope scope, bool boarder) => scope switch
@@ -40,9 +48,11 @@ internal class SkipSettings
     public int TrailOwnedConfidence = 50;
     public int TrailBoarderConfidence = 50;
     public bool Lessons = true;
-    public bool LessonTips;
+    public LessonTip LessonTip = LessonTip.Best;
     public int LessonConfidence = 50;
     public bool Competitions = true;
+    // false: only after winning its previous competition; true: also once it has won that competition.
+    public bool CompetitionAnyWin;
     public bool HorseInfoResults = true;
 
     // What a horse needs to give each lesson (see LessonRequirements); -1 = the game's own value.
@@ -63,6 +73,7 @@ internal class SkipSettings
             return settings;
         try
         {
+            var tipSet = false;
             foreach (var line in File.ReadAllLines(FilePath))
             {
                 var separator = line.IndexOf('=');
@@ -79,9 +90,13 @@ internal class SkipSettings
                     case nameof(TrailOwnedConfidence): settings.TrailOwnedConfidence = ParsePercent(value, settings.TrailOwnedConfidence); break;
                     case nameof(TrailBoarderConfidence): settings.TrailBoarderConfidence = ParsePercent(value, settings.TrailBoarderConfidence); break;
                     case nameof(Lessons): settings.Lessons = ParseBool(value, settings.Lessons); break;
-                    case nameof(LessonTips): settings.LessonTips = ParseBool(value, settings.LessonTips); break;
+                    case nameof(LessonTip): settings.LessonTip = ParseTip(value, settings.LessonTip); tipSet = true; break;
+                    // Up to 1.1.0 tips were on (good-lesson tip) or off. Off was the default and is written with any
+                    // other change, so it can't tell a choice; it becomes the new default.
+                    case "LessonTips" when !tipSet: if (ParseBool(value, false)) settings.LessonTip = LessonTip.Good; break;
                     case nameof(LessonConfidence): settings.LessonConfidence = ParsePercent(value, settings.LessonConfidence); break;
                     case nameof(Competitions): settings.Competitions = ParseBool(value, settings.Competitions); break;
+                    case nameof(CompetitionAnyWin): settings.CompetitionAnyWin = ParseBool(value, settings.CompetitionAnyWin); break;
                     case nameof(HorseInfoResults): settings.HorseInfoResults = ParseBool(value, settings.HorseInfoResults); break;
                     default:
                         for (var i = 0; i < LessonRequirements.Levels.Length; i++)
@@ -108,7 +123,7 @@ internal class SkipSettings
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
             var lines = new System.Collections.Generic.List<string>
             {
-                "# Skip Training mod settings, the same for all save games. Change them in the Mods menu of the game.",
+                "# Skip Button mod settings, the same for all save games. Change them in the Mods menu of the game.",
                 $"{nameof(Training)}={Training}",
                 $"{nameof(TrainingOwnedConfidence)}={TrainingOwnedConfidence}",
                 $"{nameof(TrainingBoarderConfidence)}={TrainingBoarderConfidence}",
@@ -116,9 +131,10 @@ internal class SkipSettings
                 $"{nameof(TrailOwnedConfidence)}={TrailOwnedConfidence}",
                 $"{nameof(TrailBoarderConfidence)}={TrailBoarderConfidence}",
                 $"{nameof(Lessons)}={Lessons}",
-                $"{nameof(LessonTips)}={LessonTips}",
+                $"{nameof(LessonTip)}={LessonTip}",
                 $"{nameof(LessonConfidence)}={LessonConfidence}",
                 $"{nameof(Competitions)}={Competitions}",
+                $"{nameof(CompetitionAnyWin)}={CompetitionAnyWin}",
                 $"{nameof(HorseInfoResults)}={HorseInfoResults}",
                 "# Lesson horse needs (-1 = the game's own value).",
             };
@@ -138,6 +154,9 @@ internal class SkipSettings
 
     private static HorseScope ParseScope(string value, HorseScope fallback) =>
         Enum.TryParse(value, true, out HorseScope scope) && Enum.IsDefined(typeof(HorseScope), scope) ? scope : fallback;
+
+    private static LessonTip ParseTip(string value, LessonTip fallback) =>
+        Enum.TryParse(value, true, out LessonTip tip) && Enum.IsDefined(typeof(LessonTip), tip) ? tip : fallback;
 
     private static int ParsePercent(string value, int fallback) =>
         int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var percent) ? Math.Clamp(percent, 0, 100) : fallback;

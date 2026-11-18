@@ -7,13 +7,13 @@ using HarmonyLib;
 namespace SkipTraining;
 
 [BepInPlugin(Guid, Name, Version)]
-// The skip settings are changed in the Mod Manager's mod window, so it is required (1.2.0 has the number boxes).
-[BepInDependency("hoofprintbay.modmanager", ">=1.2.0")]
+// The skip settings are changed in the Mod Manager's mod window, so it is required (1.3.0 has the foldable sections).
+[BepInDependency("hoofprintbay.modmanager", ">=1.3.0")]
 public class Plugin : BasePlugin
 {
     public const string Guid = "hoofprintbay.skiptraining";
-    public const string Name = "Skip Training";
-    public const string Version = "1.1.0";
+    public const string Name = "Skip Button";
+    public const string Version = "1.2.0";
 
     internal static ManualLogSource Logger;
     internal static ConfigEntry<string> TrainingButtonLabel;

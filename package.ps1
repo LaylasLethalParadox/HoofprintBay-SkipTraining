@@ -1,10 +1,10 @@
 # Builds the plugin and makes the release zip: dist\SkipTraining-<version>.zip
 # The zip holds BepInEx\plugins\SkipTraining\SkipTraining.dll, so it can be extracted straight into the game folder.
-# Close the game first: it locks the plugin DLL.
+# NoInstall: building the release zip never touches a game install.
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-dotnet build -c Release
+dotnet build -c Release -p:NoInstall=true
 if ($LASTEXITCODE -ne 0) { throw 'The build failed.' }
 
 $version = ([xml](Get-Content SkipTraining.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace SkipTraining;
 
 // Skipping competitions from the ride's pause menu. A horse may skip a competition after winning its
-// previous one; the skip replays the horse's best run in that same competition, which the game then
+// previous one (or, with CompetitionAnyWin, one it has won before); the skip replays the horse's best run in that same competition, which the game then
 // ranks against the other riders and pays out like any other run. The game keeps no per-horse results,
 // so finished competition rides are recorded here (CompetitionRecords).
 [HarmonyPatch]
@@ -21,12 +21,16 @@ internal static class CompetitionSkip
         if (!SkipSettings.Current.Competitions)
             return;
         var records = CompetitionRecords.Current;
-        if (!records.WonLatest(horse.uuid))
+        var course = ride.SelectedCourse.name;
+        var wonHere = SkipSettings.Current.CompetitionAnyWin && HorseBookResults.HasWon(horse, ride.SelectedCourse);
+        if (!wonHere && !records.WonLatest(horse.uuid))
         {
-            Plugin.Logger.LogInfo($"Skip not offered: {horse.name} didn't win its previous competition.");
+            Plugin.Logger.LogInfo(SkipSettings.Current.CompetitionAnyWin
+                ? $"Skip not offered: {horse.name} hasn't won this competition yet and didn't win its previous one."
+                : $"Skip not offered: {horse.name} didn't win its previous competition.");
             return;
         }
-        var run = records.Best(horse.uuid, ride.SelectedCourse.name);
+        var run = records.Best(horse.uuid, course);
         if (run == null)
         {
             Plugin.Logger.LogInfo($"Skip not offered: {horse.name} has no recorded run in this competition yet.");
